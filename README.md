@@ -10,8 +10,8 @@ each other regularly for something like buying daily foods.
 
 Commands
 -----
-    /gave amount to @person [-- some words as description]
-    /took amount from @person [-- some words as description]
+    /gave AMOUNT to @PERSON [-- some words as description]
+    /took AMOUNT from @PERSON [-- some words as description]
     /report
     /contacts
 
