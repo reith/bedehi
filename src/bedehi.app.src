@@ -1,0 +1,35 @@
+%% -*- erlang -*-
+
+{application, bedehi,
+ [{description, "Debts notebook"},
+  {vsn, "0.1.0"},
+  {registered, []},
+  {mod, { bedehi_app, []}},
+  {applications,
+   [kernel,
+    stdlib,
+    cowboy,
+    inets
+   ]},
+  {env ,[
+    {host, '_'}
+    ,{port, 8443}
+
+    ,{ssl_cacertfile, "ssl/ca.crt"}
+    ,{ssl_certfile, "ssl/server.crt"}
+    ,{ssl_keyfile, "ssl/server.key"}
+
+    ,{bot_token, <<"put-your-token-here">>}
+
+    ,{debt_db, "debts.dets"}
+    ,{p2p_balance_db, "p2p_balances.dets"}
+    ,{prv_chat_db, "private_chats.dets"}
+    ,{contact_db, "contacts.dets"}
+    ,{user_db, "users.dets"}
+  ]},
+  {modules, []},
+
+  {maintainers, []},
+  {licenses, []},
+  {links, []}
+ ]}.

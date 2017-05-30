@@ -1,0 +1,4 @@
+contacts - Manage personal phonebook
+gave - <Amount> to @<Person> [ -- <Reason> ] Claim someone owes you
+took - <Amount> from @<Person> [ -- <Reason> ] Tell you owe money to someone
+report - Get a list of debts you owe or people owe to you
