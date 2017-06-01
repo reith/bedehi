@@ -46,15 +46,15 @@ repr(#user{id=UserId}, _) when UserId =/= undefined ->
   end;
 
 repr(#debt{amount=Amount, debtor=Debtor, status=Status}, debtor) ->
-  io_lib:format("~b from ~s, status: *~s*", [Amount, repr(#user{id=Debtor}), Status]);
+  io_lib:format("~p from ~s, status: *~s*", [Amount, repr(#user{id=Debtor}), Status]);
 repr(#debt{amount=Amount, lender=Lender, status=Status}, lender) ->
-  io_lib:format("~b to ~s, status: *~s*", [Amount, repr(#user{id=Lender}), Status]);
+  io_lib:format("~p to ~s, status: *~s*", [Amount, repr(#user{id=Lender}), Status]);
 repr(#debt{amount=Amount, lender=Lender, debtor=Debtor, reason=Reason, status=Status}, _) ->
   ReasonStr = case Reason of
     undefined -> "";
     _ -> io_lib:format(" for \"~ts\"", [Reason])
   end,
-  io_lib:format("~b from ~ts to ~ts~ts, status: *~s*",
+  io_lib:format("~p from ~ts to ~ts~ts, status: *~s*",
                 [Amount, repr(#user{id=Debtor}), repr(#user{id=Lender}),
                  ReasonStr, Status]).
   

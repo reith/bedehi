@@ -200,7 +200,7 @@ handle_call({account_debt,
     {ok, RemainedAmount} ->
       ok = do_apply_to_balance(Debt, BlnTab),
       AgreedDebt = case RemainedAmount of
-        0 -> Debt#debt{status=cleared, unpaid_amount=RemainedAmount};
+        Zero when Zero == 0 -> Debt#debt{status=cleared, unpaid_amount=RemainedAmount};
         _ -> Debt#debt{status=agreed, unpaid_amount=RemainedAmount}
       end,
       do_add_debt(AgreedDebt, DebtTab);
@@ -382,9 +382,9 @@ code_change(_OldVsn, State, _Extra) ->
 
 -type dets_insert_result() :: ok | {error, Reason::term()}.
 
--spec do_liquidate_debts(Debtor::user_id(), Lender::user_id(), Amount::integer(),
+-spec do_liquidate_debts(Debtor::user_id(), Lender::user_id(), Amount::number(),
                          Tab::dets:tab_name()) ->
-  {InsertResult::dets_insert_result(), ReducedAmount::integer()}.
+  {InsertResult::dets_insert_result(), ReducedAmount::number()}.
 
 do_liquidate_debts(Debtor, Lender, Amount, Tab) ->
   LowDebts = case dets:match_object(Tab, #debt{debtor=Debtor, lender=Lender,

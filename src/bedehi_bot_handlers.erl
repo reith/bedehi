@@ -157,15 +157,15 @@ defined_commands() ->
     {"agree$", [], fun handle_agree/3},
     {"reject$", [], fun handle_reject/3},
 
-    {"/gave (\\d*) to -contact:([^-]*)$", [{amount, {r,1}}, {debtor, {r,2}}, {lender, from}], fun handle_gave_c/3},
-    {"/gave (\\d*) to -contact:([^-]*) -- (.*)$", [{amount, {r,1}}, {debtor, {r,2}}, {lender, from}, {reason, {r,3}}], fun handle_gave_c/3},
-    {"/gave (\\d*) to ([^-]*)$", [{amount, {r,1}}, {debtor, {e,2}}, {lender, from}], fun handle_gave_p/3},
-    {"/gave (\\d*) to ([^-]*) -- (.*)$", [{amount, {r,1}}, {debtor, {e,2}}, {lender, from}, {reason, {r,3}}], fun handle_gave_p/3},
+    {"/gave (\\d*\\.?\\d*) to -contact:([^-]*)$", [{amount, {r,1}}, {debtor, {r,2}}, {lender, from}], fun handle_gave_c/3},
+    {"/gave (\\d*\\.?\\d*) to -contact:([^-]*) -- (.*)$", [{amount, {r,1}}, {debtor, {r,2}}, {lender, from}, {reason, {r,3}}], fun handle_gave_c/3},
+    {"/gave (\\d*\\.?\\d*) to ([^-]*)$", [{amount, {r,1}}, {debtor, {e,2}}, {lender, from}], fun handle_gave_p/3},
+    {"/gave (\\d*\\.?\\d*) to ([^-]*) -- (.*)$", [{amount, {r,1}}, {debtor, {e,2}}, {lender, from}, {reason, {r,3}}], fun handle_gave_p/3},
 
-    {"/took (\\d*) from -contact:([^-]*)$", [{amount, {r,1}}, {lender, {r,2}}, {debtor, from}], fun handle_took_c/3},
-    {"/took (\\d*) from -contact:([^-]*) -- (.*)$", [{amount, {r,1}}, {lender, {r,2}}, {debtor, from}, {reason, {r,3}}], fun handle_took_c/3},
-    {"/took (\\d*) from ([^-]*)$", [{amount, {r,1}}, {lender, {e,2}}, {debtor, from}], fun handle_took_p/3},
-    {"/took (\\d*) from ([^-]*) -- (.*)$", [{amount, {r,1}}, {lender, {e,2}}, {debtor, from}, {reason, {r,3}}], fun handle_took_p/3},
+    {"/took (\\d*\\.?\\d*) from -contact:([^-]*)$", [{amount, {r,1}}, {lender, {r,2}}, {debtor, from}], fun handle_took_c/3},
+    {"/took (\\d*\\.?\\d*) from -contact:([^-]*) -- (.*)$", [{amount, {r,1}}, {lender, {r,2}}, {debtor, from}, {reason, {r,3}}], fun handle_took_c/3},
+    {"/took (\\d*\\.?\\d*) from ([^-]*)$", [{amount, {r,1}}, {lender, {e,2}}, {debtor, from}], fun handle_took_p/3},
+    {"/took (\\d*\\.?\\d*) from ([^-]*) -- (.*)$", [{amount, {r,1}}, {lender, {e,2}}, {debtor, from}, {reason, {r,3}}], fun handle_took_p/3},
 
     {"/report$", [{for, from}], fun handle_report/3}
   ].
@@ -515,7 +515,7 @@ handle_gave_u(#{amount := BAmount, text := _Text,
     bedehi_telegram:reply(#{text =><<"If you beleive you owe yourself, just pay back! none of my business 😒">>},
                           P, BotToken);
   true ->
-    Amount = binary_to_integer(BAmount),
+    Amount = binary_to_number(BAmount),
     Debt = #debt{debtor=DebtorId, lender=LenderId, msg_id=MsgId, amount=Amount,
                  status=charged, msg_chat_id=maps:get(<<"id">>, Chat),
                  reason=maps:get(reason, Args, undefined),
@@ -574,7 +574,7 @@ handle_took_u(#{amount := BAmount, text := _Text,
   if LenderId =:= DebtorId ->
     bedehi_telegram:reply(#{text => <<"It's Ok, manage it youself!">>}, P, BotToken);
   true ->
-    Amount = binary_to_integer(BAmount),
+    Amount = binary_to_number(BAmount),
     Debt = #debt{debtor=DebtorId, lender=LenderId, msg_id=MsgId,
                  status=agreed, amount=Amount, unpaid_amount=Amount,
                  msg_chat_id=maps:get(<<"id">>, Chat),
@@ -705,7 +705,7 @@ unknown_participant_message(_Input) ->
 
 
 charge_message(Debtor = #user{}, Lender = #user{}, #debt{status=charged, amount=Amount, reason=Reason, msg_id=MsgId}) ->
-  Body = characters_to_binary(io_lib:format("~ts beleives ~ts should give him ~b~ts, debtor can confirm by replying `agree` or `reject` to this message",
+  Body = characters_to_binary(io_lib:format("~ts beleives ~ts should give him ~p~ts, debtor can confirm by replying `agree` or `reject` to this message",
     [bedehi_telegram:repr(Lender), bedehi_telegram:repr(Debtor), Amount,
      bedehi_msg:reason(Reason)])),
   #{text => Body, reply_markup => #{inline_keyboard => debt_agreement_keyboard(MsgId), one_time_keyboard => true}}.
@@ -722,15 +722,15 @@ report_message(UserId, Balances, Credits, Debts) ->
     fun(Key, Vals, RespAcc) ->
       {ok, Guy} = bedehi_db:get_user(Key),
       BlnRepr = case proplists:get_value(Key, Balances) of
-        0 ->
+        Zero when Zero == 0 ->
           io_lib:format("~nYou are all clear with ~ts:", [bedehi_telegram:repr(Guy)]);
         undefined ->
           io_lib:format("~nThe balance with ~ts:", [bedehi_telegram:repr(Guy)]);
         BlnAmount when BlnAmount > 0 ->
-          io_lib:format("~nThere is confirmed debt of ~b to ~ts:",
+          io_lib:format("~nThere is confirmed debt of ~p to ~ts:",
                         [BlnAmount, bedehi_telegram:repr(Guy)]);
         BlnAmount ->
-          io_lib:format("~nThere is confirmed debt of ~b from ~ts:",
+          io_lib:format("~nThere is confirmed debt of ~p from ~ts:",
                         [-BlnAmount, bedehi_telegram:repr(Guy)])
       end,
       [BlnRepr, "\n", bedehi_telegram:repr(Vals, []) | RespAcc]
@@ -762,4 +762,17 @@ conv_response(Response, Data,
   case jiffy:decode(TlgResp, [return_maps]) of
     #{<<"result">> := #{<<"date">> := Date}} ->
       true = bedehi_db:add_context(ChatId, Data, Date)
+  end.
+
+
+binary_to_number(Bin) ->
+  try erlang:binary_to_integer(Bin)
+  catch error:badarg ->
+    case re:run(Bin, "(\\d*)\\.(\\d*)", [{capture, all, binary}]) of
+      {match, [_, <<>>, <<>>]} -> 0;
+      {match, [_, <<>>, Fraction]} -> binary_to_float(<<$0,$.,Fraction/bytes>>);
+      {match, [_, Int, <<>>]} -> binary_to_float(<<Int/bytes,$.,$0>>);
+      {match, _} -> binary_to_float(Bin);
+      _ -> erlang:error(badarg, [Bin])
+    end
   end.
